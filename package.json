@@ -1,0 +1,19 @@
+{
+  "name": "AgentSync",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "bin": {
+    "ai-skills": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node tests/composer.test.js && node tests/codex-adapter.test.js && node tests/cli.test.js",
+    "ai-skills": "node dist/cli.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "private": true
+}

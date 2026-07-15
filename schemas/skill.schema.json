@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentsync.local/schemas/skill.schema.json",
+  "title": "AgentSync Registry Material Frontmatter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "kind",
+    "title",
+    "summary",
+    "scope",
+    "loadMode",
+    "status",
+    "category",
+    "severity",
+    "version",
+    "owner",
+    "updatedAt",
+    "appliesTo"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["rule", "skill", "reference"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["company", "team", "project", "directory", "taskType"]
+    },
+    "loadMode": {
+      "type": "string",
+      "enum": ["always", "project", "task", "onDemand", "reference"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "deprecated", "disabled"]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "general",
+        "communication",
+        "git",
+        "verification",
+        "dependencies",
+        "frontend",
+        "bff",
+        "backend",
+        "typescript",
+        "html",
+        "scss",
+        "architecture",
+        "security"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["required", "recommended"]
+    },
+    "version": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date"
+    },
+    "appliesTo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "projects": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "agents": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "taskTypes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "technologies": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

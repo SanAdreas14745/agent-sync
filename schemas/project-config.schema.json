@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentsync.local/schemas/project-config.schema.json",
+  "title": "AgentSync Project Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project", "agents", "registry"],
+  "properties": {
+    "project": {
+      "type": "string",
+      "minLength": 1
+    },
+    "agents": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "registry": {
+      "type": "string",
+      "minLength": 1
+    },
+    "technologies": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "defaultTaskType": {
+      "type": "string"
+    }
+  }
+}
