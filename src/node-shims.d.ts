@@ -17,6 +17,10 @@ declare module 'node:fs' {
   export function readdirSync(path: string, options: { withFileTypes: true }): Dirent[];
   export function statSync(path: string): { isDirectory(): boolean; isFile(): boolean };
   export function writeFileSync(path: string, data: string, encoding: string): void;
+  export function rmSync(
+    path: string,
+    options?: { recursive?: boolean; force?: boolean },
+  ): void;
 }
 
 declare module 'node:crypto' {

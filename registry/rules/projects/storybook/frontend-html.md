@@ -13,7 +13,7 @@ owner: frontend
 updatedAt: 2026-07-13
 appliesTo:
   projects: ["storybook"]
-  agents: ["codex"]
+  agents: ["codex", "claude-code", "cursor", "github-copilot"]
   technologies: ["angular"]
 ---
 

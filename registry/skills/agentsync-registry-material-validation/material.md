@@ -13,7 +13,7 @@ owner: frontend
 updatedAt: 2026-07-09
 appliesTo:
   projects: ["agentsync"]
-  agents: ["codex"]
+  agents: ["codex", "claude-code", "cursor", "github-copilot"]
 ---
 
 # Валидация Registry Materials AgentSync

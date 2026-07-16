@@ -4,9 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { explainSkill, resolveSkills } from './composer/resolver';
 import { ResolveContext } from './composer/types';
-import { generateCodexFiles } from './adapters/codex/renderer';
-import { codexDefaultOutput } from './adapters/codex/types';
-import { writeCodexFiles } from './adapters/codex/writer';
+import { getAgentAdapter, normalizeAgentId } from './adapters/agent-registry';
 import { RegistryProvider } from './registry/provider';
 import { createRegistryProvider } from './registry/provider-factory';
 import { readProjectConfig } from './registry/project-config';
@@ -145,10 +143,10 @@ async function syncCommand(options: CliOptions): Promise<number> {
     return 1;
   }
 
-  const output = getAgentOutput(workspace.agent);
+  const adapter = getAgentAdapter(workspace.agent);
 
-  if (!output) {
-    console.error(`No output defaults for agent "${workspace.agent}".`);
+  if (!adapter) {
+    console.error(`No adapter is available for agent "${workspace.agent}".`);
     return 1;
   }
 
@@ -158,20 +156,16 @@ async function syncCommand(options: CliOptions): Promise<number> {
   );
 
   if (options.dryRun) {
-    const generated = generateCodexFiles({ resolveResult, output });
+    const files = adapter.generateFiles(resolveResult);
     printResolved(resolveResult.included.map((skill) => `${skill.id}@${skill.version}`));
     console.log('');
     console.log('Would generate:');
 
-    for (const file of generated.files) {
+    for (const file of files) {
       console.log(`- ${file.relativePath}`);
     }
   } else {
-    const files = writeCodexFiles({
-      projectRoot: workspace.projectRoot,
-      resolveResult,
-      output,
-    });
+    const files = adapter.writeFiles(workspace.projectRoot, resolveResult);
 
     printResolved(resolveResult.included.map((skill) => `${skill.id}@${skill.version}`));
     console.log('');
@@ -193,23 +187,22 @@ function statusCommand(options: CliOptions): number {
     return 1;
   }
 
-  const output = getAgentOutput(workspace.agent);
+  const adapter = getAgentAdapter(workspace.agent);
 
-  if (!output) {
-    console.error(`No output defaults for agent "${workspace.agent}".`);
+  if (!adapter) {
+    console.error(`No adapter is available for agent "${workspace.agent}".`);
     return 1;
   }
 
-  const indexPath = join(workspace.projectRoot, output.generatedDir, 'skill-index.json');
+  const indexPath = join(workspace.projectRoot, adapter.skillIndexPath);
 
   console.log(`Project: ${workspace.config.project}`);
   console.log(`Agent: ${workspace.agent}`);
   console.log('');
   console.log('Generated files:');
-  printFileStatus(workspace.projectRoot, output.entry);
-  printFileStatus(workspace.projectRoot, join(output.generatedDir, 'active-rules.md'));
-  printFileStatus(workspace.projectRoot, join(output.generatedDir, 'rule-scope.md'));
-  printFileStatus(workspace.projectRoot, join(output.generatedDir, 'skill-index.json'));
+  for (const path of adapter.statusPaths) {
+    printFileStatus(workspace.projectRoot, path);
+  }
 
   if (!existsSync(indexPath)) {
     console.log('');
@@ -286,17 +279,13 @@ async function checkCommand(options: CliOptions): Promise<number> {
     console.log(`OK    ${registry.skills.length} registry items loaded`);
   }
 
-  const output = getAgentOutput(workspace.agent);
+  const adapter = getAgentAdapter(workspace.agent);
 
-  if (!output) {
-    console.log(`ERROR no output defaults for agent "${workspace.agent}"`);
+  if (!adapter) {
+    console.log(`ERROR no adapter is available for agent "${workspace.agent}"`);
     hasErrors = true;
   } else {
-    for (const path of [
-      output.entry,
-      join(output.generatedDir, 'active-rules.md'),
-      join(output.generatedDir, 'skill-index.json'),
-    ]) {
+    for (const path of adapter.managedPaths) {
       if (!isSafeProjectRelativePath(projectRoot, path)) {
         console.log(`ERROR unsafe output path: ${path}`);
         hasErrors = true;
@@ -391,7 +380,7 @@ function createWorkspace(
     config,
     registryPath,
     registryProvider: createRegistryProvider(projectRoot, config.registry),
-    agent: options.agent || config.agents[0],
+    agent: normalizeAgentId(options.agent || config.agents[0]),
   };
 }
 
@@ -405,14 +394,6 @@ function createResolveContext(workspace: Workspace, options: CliOptions): Resolv
       ? options.technologies
       : workspace.config.technologies,
   };
-}
-
-function getAgentOutput(agent: string) {
-  if (agent === 'codex') {
-    return codexDefaultOutput;
-  }
-
-  return undefined;
 }
 
 function parseArgs(argv: string[]): ParsedArgs & { optionsHelp?: boolean } {
@@ -555,7 +536,7 @@ Commands:
   registry review      Review registry material quality
 
 Options:
-  --agent <name>       Agent to resolve, default is first config agent
+  --agent <name>       codex | claude-code | cursor | github-copilot
   --task-type <name>   Current task type
   --project-root <dir> Project root, default is current directory
   --technology <name>  Add current technology context

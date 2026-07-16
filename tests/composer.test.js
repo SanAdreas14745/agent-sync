@@ -64,7 +64,35 @@ assert.equal(
 );
 assert.equal(codeReviewResult.warnings.length, 0);
 
-const agentMismatchResult = api.resolveSkills(registry.skills, {
+for (const agent of ['claude-code', 'cursor', 'github-copilot']) {
+  const result = api.resolveSkills(registry.skills, {
+    ...baseContext,
+    agent,
+  });
+
+  assert.deepEqual(
+    result.included.map((skill) => skill.id),
+    baseResult.included.map((skill) => skill.id),
+  );
+  assert.deepEqual(
+    result.available.map((skill) => skill.id),
+    baseResult.available.map((skill) => skill.id),
+  );
+  assert.equal(result.warnings.length, 0);
+}
+
+const codexOnlySource = registry.skills.find((skill) => skill.id === 'company.common');
+assert.ok(codexOnlySource);
+
+const codexOnlyMaterial = {
+  ...codexOnlySource,
+  id: 'test.codex-only',
+  appliesTo: {
+    ...codexOnlySource.appliesTo,
+    agents: ['codex'],
+  },
+};
+const agentMismatchResult = api.resolveSkills([codexOnlyMaterial], {
   ...baseContext,
   agent: 'cursor',
 });

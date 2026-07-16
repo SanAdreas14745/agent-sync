@@ -13,7 +13,7 @@ owner: frontend
 updatedAt: 2026-07-10
 appliesTo:
   projects: ["brandapp"]
-  agents: ["codex"]
+  agents: ["codex", "claude-code", "cursor", "github-copilot"]
 ---
 
 ## Контекст

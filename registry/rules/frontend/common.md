@@ -12,7 +12,7 @@ version: 1
 owner: frontend
 updatedAt: 2026-07-09
 appliesTo:
-  agents: ["codex"]
+  agents: ["codex", "claude-code", "cursor", "github-copilot"]
   technologies: ["typescript", "angular"]
 ---
 

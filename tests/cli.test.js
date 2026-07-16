@@ -131,6 +131,57 @@ assert.match(statusOutput, /frontend.typescript@1/);
 assert.match(statusOutput, /Generated rule files:/);
 assert.match(statusOutput, /Generated skill files: 7/);
 
+const nativeAgentCases = [
+  {
+    agent: 'claude-code',
+    requiredRule: '.claude/rules/agentsync/required.md',
+    skill: '.claude/skills/agentsync-frontend-code-review/SKILL.md',
+  },
+  {
+    agent: 'cursor',
+    requiredRule: '.cursor/rules/agentsync-required.mdc',
+    skill: '.cursor/skills/agentsync-frontend-code-review/SKILL.md',
+  },
+  {
+    agent: 'github-copilot',
+    requiredRule: '.github/instructions/agentsync-required.instructions.md',
+    skill: '.github/skills/agentsync-frontend-code-review/SKILL.md',
+  },
+];
+
+for (const testCase of nativeAgentCases) {
+  const nativeSyncOutput = runCli([
+    'sync',
+    '--project-root',
+    projectRoot,
+    '--agent',
+    testCase.agent,
+  ]);
+  assert.match(nativeSyncOutput, /Generated:/);
+  assert.ok(nativeSyncOutput.includes(testCase.requiredRule));
+  assert.ok(fs.existsSync(path.join(projectRoot, testCase.requiredRule)));
+  assert.ok(fs.existsSync(path.join(projectRoot, testCase.skill)));
+
+  const nativeStatusOutput = runCli([
+    'status',
+    '--project-root',
+    projectRoot,
+    '--agent',
+    testCase.agent,
+  ]);
+  assert.ok(nativeStatusOutput.includes(testCase.requiredRule));
+  assert.match(nativeStatusOutput, /Generated skill files: 7/);
+}
+
+const claudeAliasStatusOutput = runCli([
+  'status',
+  '--project-root',
+  projectRoot,
+  '--agent',
+  'claude',
+]);
+assert.match(claudeAliasStatusOutput, /Agent: claude-code/);
+
 const infoIncludedOutput = runCli([
   'info',
   'frontend.code-review',

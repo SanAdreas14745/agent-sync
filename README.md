@@ -43,7 +43,7 @@ ai-skills --version
 ``` json
 {
   "project": "omega",
-  "agents": ["codex"],
+  "agents": ["codex", "claude-code", "cursor", "github-copilot"],
   "technologies": ["typescript", "angular", "nestjs"],
   "registry": "../../AgentSync/registry"
 }
@@ -54,10 +54,15 @@ ai-skills --version
 заменится на опубликованный registry-адрес или alias; локальный путь
 `../../AgentSync/registry` нужен только для текущей пилотной проверки.
 
+Поддерживаемые идентификаторы: `codex`, `claude-code`, `cursor` и
+`github-copilot`. По умолчанию используется первый из `agents`; другой
+adapter можно выбрать через `--agent`.
+
 ### 3. Запустить генерацию
 
 ``` shell
 ai-skills sync --project-root .
+ai-skills sync --project-root . --agent cursor
 ```
 
 Если CLI еще не установлен как npm-пакет и запускается из локальной копии
@@ -69,7 +74,7 @@ node ../../AgentSync/dist/cli.js sync --project-root .
 
 ### 4. Проверить результат
 
-После `sync` в корне проекта появятся:
+Для Codex после `sync` в корне проекта появятся:
 
 ``` text
 <target-project>/
@@ -88,6 +93,17 @@ node ../../AgentSync/dist/cli.js sync --project-root .
 
 `AGENTS.md` — короткий entrypoint для Codex. Подробные правила лежат в
 `.agents/generated/`.
+
+Другие adapter-ы используют нативные каталоги автодискавери: среда агента
+сама обнаруживает rules и skills в этих расположениях. Ссылки из
+пользовательских `CLAUDE.md` или `.github/copilot-instructions.md` для
+этого не нужны, поэтому AgentSync их не перезаписывает:
+
+| Агент | Rules | Skills |
+| --- | --- | --- |
+| Claude Code | `.claude/rules/agentsync/` | `.claude/skills/agentsync-<name>/SKILL.md` |
+| Cursor | `.cursor/rules/agentsync-*.mdc` | `.cursor/skills/agentsync-<name>/SKILL.md` |
+| GitHub Copilot | `.github/instructions/agentsync-*.instructions.md` | `.github/skills/agentsync-<name>/SKILL.md` |
 
 ## Команды
 
@@ -239,7 +255,7 @@ version: 1
 owner: frontend
 updatedAt: 2026-07-09
 appliesTo:
-  agents: ["codex"]
+  agents: ["codex", "claude-code", "cursor", "github-copilot"]
   technologies: ["typescript"]
 ---
 
