@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs';
-import { isAbsolute, join, relative, resolve } from 'node:path';
-import { explainSkill, resolveSkills } from './composer/resolver';
-import { ResolveContext } from './composer/types';
-import { getAgentAdapter, normalizeAgentId } from './adapters/agent-registry';
-import { RegistryProvider } from './registry/provider';
-import { createRegistryProvider } from './registry/provider-factory';
-import { readProjectConfig } from './registry/project-config';
-import { reviewRegistryMaterials } from './registry/reviewer';
-import { ProjectConfig, ValidationIssue } from './registry/types';
+import {existsSync, readFileSync} from 'node:fs';
+import {isAbsolute, join, relative, resolve} from 'node:path';
+import {explainSkill, resolveSkills} from './composer/resolver';
+import {ResolveContext} from './composer/types';
+import {getAgentAdapter, normalizeAgentId} from './adapters/agent-registry';
+import {RegistryProvider} from './registry/provider';
+import {createRegistryProvider} from './registry/provider-factory';
+import {readProjectConfig} from './registry/project-config';
+import {reviewRegistryMaterials} from './registry/reviewer';
+import {ProjectConfig, ValidationIssue} from './registry/types';
 
 interface CliOptions {
   agent?: string;
@@ -50,8 +50,7 @@ async function main(argv: string[]): Promise<void> {
   }
 
   try {
-    const exitCode = await runCommand(parsed);
-    process.exitCode = exitCode;
+    process.exitCode = await runCommand(parsed);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
@@ -269,7 +268,12 @@ async function checkCommand(options: CliOptions): Promise<number> {
     return 1;
   }
 
-  if (workspace.registryProvider.type === 'file') {
+  const registryHasErrors = registry.issues.some((issue) => issue.severity === 'error');
+
+  if (
+    !registryHasErrors &&
+    (workspace.registryProvider.type === 'file' || workspace.registryProvider.type === 'bundled')
+  ) {
     console.log('OK    registry found');
   }
 

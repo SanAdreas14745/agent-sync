@@ -119,7 +119,14 @@ export interface YandexObjectStorageRegistryConfig {
   endpoint: string;
 }
 
-export type RegistryConfig = string | YandexObjectStorageRegistryConfig;
+export interface BundledRegistryConfig {
+  type: 'bundled';
+}
+
+export type RegistryConfig =
+  | string
+  | BundledRegistryConfig
+  | YandexObjectStorageRegistryConfig;
 
 export interface ProjectConfig {
   project: string;

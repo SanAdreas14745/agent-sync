@@ -1,0 +1,48 @@
+name: Publish npm package
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@harness-system'
+
+      - name: Verify release tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          package_version="$(node -p \"require('./package.json').version\")"
+          test "$RELEASE_TAG" = "v$package_version"
+
+      - name: Verify publishing token configuration
+        env:
+          PUBLISH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          if [ "$REPOSITORY_OWNER" != "harness-system" ] && [ -z "$PUBLISH_TOKEN" ]; then
+            echo "Set the GH_PACKAGES_TOKEN Actions secret with write:packages access to @harness-system."
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run verify
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
