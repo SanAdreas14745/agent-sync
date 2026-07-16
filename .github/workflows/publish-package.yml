@@ -17,7 +17,7 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24.x'
           cache: npm
@@ -28,7 +28,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          package_version="$(node -p \"require('./package.json').version\")"
+          package_version="$(node -p 'require("./package.json").version')"
           test "$RELEASE_TAG" = "v$package_version"
 
       - name: Verify publishing token configuration
