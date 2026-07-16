@@ -70,6 +70,8 @@ const appliesToFields: Array<keyof AppliesTo> = [
   'technologies',
 ];
 
+const forbiddenOrderingFields = ['priority', 'order'];
+
 export interface NormalizeSkillInput {
   frontmatter: Record<string, unknown>;
   body: string;
@@ -117,6 +119,20 @@ export function normalizeSkill(input: NormalizeSkillInput): NormalizeSkillResult
   );
   const appliesTo = readAppliesTo(frontmatter, sourceFile, issues);
   const body = input.body.trim();
+
+  for (const field of forbiddenOrderingFields) {
+    if (!Object.prototype.hasOwnProperty.call(frontmatter, field)) {
+      continue;
+    }
+
+    issues.push({
+      severity: 'error',
+      code: 'manual_ordering_field_not_allowed',
+      message: `Field "${field}" is not allowed. Registry ordering is derived from scope, severity, category, and id.`,
+      sourceFile,
+      field,
+    });
+  }
 
   if (body === '' && loadMode !== 'reference') {
     issues.push({

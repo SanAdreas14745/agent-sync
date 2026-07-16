@@ -7,8 +7,10 @@ import { ResolveContext } from './composer/types';
 import { generateCodexFiles } from './adapters/codex/renderer';
 import { codexDefaultOutput } from './adapters/codex/types';
 import { writeCodexFiles } from './adapters/codex/writer';
+import { RegistryProvider } from './registry/provider';
+import { createRegistryProvider } from './registry/provider-factory';
 import { readProjectConfig } from './registry/project-config';
-import { readRegistry } from './registry/reader';
+import { reviewRegistryMaterials } from './registry/reviewer';
 import { ProjectConfig, ValidationIssue } from './registry/types';
 
 interface CliOptions {
@@ -29,13 +31,19 @@ interface ParsedArgs {
 interface Workspace {
   projectRoot: string;
   config: ProjectConfig;
-  registryPath: string;
+  registryPath?: string;
+  registryProvider: RegistryProvider;
   agent: string;
 }
 
-main(process.argv.slice(2));
+void main(process.argv.slice(2));
 
-function main(argv: string[]): void {
+async function main(argv: string[]): Promise<void> {
+  if (isVersionRequest(argv)) {
+    printVersion();
+    return;
+  }
+
   const parsed = parseArgs(argv);
 
   if (!parsed.command || parsed.command === 'help' || parsed.optionsHelp) {
@@ -44,7 +52,7 @@ function main(argv: string[]): void {
   }
 
   try {
-    const exitCode = runCommand(parsed);
+    const exitCode = await runCommand(parsed);
     process.exitCode = exitCode;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
@@ -52,7 +60,24 @@ function main(argv: string[]): void {
   }
 }
 
-function runCommand(parsed: ParsedArgs): number {
+function isVersionRequest(argv: string[]): boolean {
+  return argv.length === 1 && (argv[0] === '--version' || argv[0] === '-v');
+}
+
+function printVersion(): void {
+  const packagePath = join(__dirname, '..', 'package.json');
+  const packageMetadata = JSON.parse(readFileSync(packagePath, 'utf8')) as {
+    version?: unknown;
+  };
+
+  if (typeof packageMetadata.version !== 'string') {
+    throw new Error(`Package version is missing in ${packagePath}.`);
+  }
+
+  console.log(packageMetadata.version);
+}
+
+async function runCommand(parsed: ParsedArgs): Promise<number> {
   switch (parsed.command) {
     case 'sync':
       return syncCommand(parsed.options);
@@ -62,6 +87,8 @@ function runCommand(parsed: ParsedArgs): number {
       return checkCommand(parsed.options);
     case 'info':
       return infoCommand(parsed.options, parsed.positional[0]);
+    case 'registry':
+      return registryCommand(parsed.options, parsed.positional);
     default:
       console.error(`Unknown command: ${parsed.command}`);
       printHelp();
@@ -69,14 +96,50 @@ function runCommand(parsed: ParsedArgs): number {
   }
 }
 
-function syncCommand(options: CliOptions): number {
+async function registryCommand(
+  options: CliOptions,
+  positional: string[],
+): Promise<number> {
+  if (positional.length !== 1 || positional[0] !== 'review') {
+    console.error('Usage: ai-skills registry review [options]');
+    return 1;
+  }
+
+  return registryReviewCommand(options);
+}
+
+async function registryReviewCommand(options: CliOptions): Promise<number> {
   const workspace = loadWorkspace(options);
 
   if (!workspace) {
     return 1;
   }
 
-  const registry = readRegistry(workspace.registryPath);
+  const registry = await workspace.registryProvider.readRegistry();
+  const reviewResult = reviewRegistryMaterials(registry.materials);
+  const issues = [...registry.issues, ...reviewResult.issues];
+
+  console.log(`Registry review: ${reviewResult.materialsChecked} material(s) checked.`);
+  const hasErrors = printIssues(issues);
+  const warnings = issues.filter((issue) => issue.severity === 'warning').length;
+
+  if (hasErrors) {
+    console.log(`Registry review failed with ${warnings} warning(s).`);
+    return 1;
+  }
+
+  console.log(`Registry review passed with ${warnings} warning(s).`);
+  return 0;
+}
+
+async function syncCommand(options: CliOptions): Promise<number> {
+  const workspace = loadWorkspace(options);
+
+  if (!workspace) {
+    return 1;
+  }
+
+  const registry = await workspace.registryProvider.readRegistry();
 
   if (printIssues(registry.issues)) {
     return 1;
@@ -177,7 +240,7 @@ function statusCommand(options: CliOptions): number {
   return 0;
 }
 
-function checkCommand(options: CliOptions): number {
+async function checkCommand(options: CliOptions): Promise<number> {
   const projectRoot = resolve(options.projectRoot || process.cwd());
   const configPath = join(projectRoot, '.ai-skills.json');
   let hasErrors = false;
@@ -202,13 +265,20 @@ function checkCommand(options: CliOptions): number {
 
   const workspace = createWorkspace(projectRoot, configResult.config, options);
 
-  if (!existsSync(workspace.registryPath)) {
+  console.log(`OK    registry provider: ${workspace.registryProvider.type}`);
+  const registry = await workspace.registryProvider.readRegistry();
+
+  if (
+    workspace.registryPath &&
+    registry.issues.some((issue) => issue.code === 'registry_root_not_found')
+  ) {
     console.log(`ERROR registry not found: ${workspace.registryPath}`);
     return 1;
   }
 
-  console.log('OK    registry found');
-  const registry = readRegistry(workspace.registryPath);
+  if (workspace.registryProvider.type === 'file') {
+    console.log('OK    registry found');
+  }
 
   if (printIssues(registry.issues)) {
     hasErrors = true;
@@ -256,7 +326,10 @@ function checkCommand(options: CliOptions): number {
   return hasErrors ? 1 : 0;
 }
 
-function infoCommand(options: CliOptions, skillId: string | undefined): number {
+async function infoCommand(
+  options: CliOptions,
+  skillId: string | undefined,
+): Promise<number> {
   if (!skillId) {
     console.error('Usage: ai-skills info <material-id>');
     return 1;
@@ -268,7 +341,7 @@ function infoCommand(options: CliOptions, skillId: string | undefined): number {
     return 1;
   }
 
-  const registry = readRegistry(workspace.registryPath);
+  const registry = await workspace.registryProvider.readRegistry();
 
   if (printIssues(registry.issues)) {
     return 1;
@@ -309,10 +382,15 @@ function createWorkspace(
   config: ProjectConfig,
   options: CliOptions,
 ): Workspace {
+  const registryPath = typeof config.registry === 'string'
+    ? resolve(projectRoot, config.registry)
+    : undefined;
+
   return {
     projectRoot,
     config,
-    registryPath: resolve(projectRoot, config.registry),
+    registryPath,
+    registryProvider: createRegistryProvider(projectRoot, config.registry),
     agent: options.agent || config.agents[0],
   };
 }
@@ -474,6 +552,7 @@ Commands:
   status               Show generated state
   check                Validate project config and registry
   info <material-id>   Show material status in current project context
+  registry review      Review registry material quality
 
 Options:
   --agent <name>       Agent to resolve, default is first config agent

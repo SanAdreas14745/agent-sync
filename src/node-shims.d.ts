@@ -1,4 +1,8 @@
 declare module 'node:fs' {
+  export interface Buffer {
+    readonly length: number;
+  }
+
   export interface Dirent {
     name: string;
     isDirectory(): boolean;
@@ -6,11 +10,25 @@ declare module 'node:fs' {
   }
 
   export function existsSync(path: string): boolean;
+  export function copyFileSync(source: string, destination: string): void;
   export function mkdirSync(path: string, options?: { recursive?: boolean }): void;
+  export function readFileSync(path: string): Buffer;
   export function readFileSync(path: string, encoding: string): string;
   export function readdirSync(path: string, options: { withFileTypes: true }): Dirent[];
   export function statSync(path: string): { isDirectory(): boolean; isFile(): boolean };
   export function writeFileSync(path: string, data: string, encoding: string): void;
+}
+
+declare module 'node:crypto' {
+  export function createHash(algorithm: string): {
+    update(value: string | import('node:fs').Buffer): {
+      digest(encoding: 'hex'): string;
+    };
+  };
+}
+
+declare module 'node:os' {
+  export function homedir(): string;
 }
 
 declare module 'node:path' {
@@ -29,3 +47,5 @@ declare const process: {
   exit(code?: number): never;
   exitCode?: number;
 };
+
+declare const __dirname: string;

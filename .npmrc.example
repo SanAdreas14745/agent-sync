@@ -1,2 +1,2 @@
-@ai-tools:registry=https://git.pbops.ru/api/v4/projects/<agent-sync-project-id>/packages/npm/
+@harness-system:registry=https://git.pbops.ru/api/v4/projects/<agent-sync-project-id>/packages/npm/
 //git.pbops.ru/api/v4/projects/<agent-sync-project-id>/packages/npm/:_authToken=<your-token>
