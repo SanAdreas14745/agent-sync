@@ -79,10 +79,52 @@ export interface RegistryIndex {
   skills: Omit<RegistryMaterial, 'body'>[];
 }
 
+export interface RegistryReleaseIndexMaterial {
+  id: string;
+  kind: RegistryMaterialKind;
+  version: number;
+  file: string;
+  checksum: string;
+}
+
+export interface RegistryReleaseIndex {
+  formatVersion: 1;
+  updatedAt: string;
+  currentRelease: {
+    id: string;
+    manifest: string;
+    checksum: string;
+  };
+  materials: RegistryReleaseIndexMaterial[];
+}
+
+export interface RegistryReleaseManifestFile {
+  path: string;
+  checksum: string;
+  size: number;
+}
+
+export interface RegistryReleaseManifest {
+  formatVersion: 1;
+  release: string;
+  createdAt: string;
+  materialRoot: string;
+  files: RegistryReleaseManifestFile[];
+}
+
+export interface YandexObjectStorageRegistryConfig {
+  type: 'yandex-object-storage';
+  bucket: string;
+  prefix: string;
+  endpoint: string;
+}
+
+export type RegistryConfig = string | YandexObjectStorageRegistryConfig;
+
 export interface ProjectConfig {
   project: string;
   agents: string[];
-  registry: string;
+  registry: RegistryConfig;
   technologies?: string[];
   defaultTaskType?: string;
 }

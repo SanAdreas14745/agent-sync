@@ -1,5 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { ProjectConfig, ValidationIssue } from './types';
+import {
+  ProjectConfig,
+  RegistryConfig,
+  ValidationIssue,
+  YandexObjectStorageRegistryConfig,
+} from './types';
 
 const projectConfigFields = new Set([
   'project',
@@ -7,6 +12,13 @@ const projectConfigFields = new Set([
   'registry',
   'technologies',
   'defaultTaskType',
+]);
+
+const yandexObjectStorageRegistryFields = new Set([
+  'type',
+  'bucket',
+  'prefix',
+  'endpoint',
 ]);
 
 export interface ReadProjectConfigResult {
@@ -50,7 +62,7 @@ export function normalizeProjectConfig(value: unknown): ReadProjectConfigResult 
   validateProjectConfigFields(value, issues);
 
   const project = readString(value, 'project', issues);
-  const registry = readString(value, 'registry', issues);
+  const registry = readRegistryConfig(value, issues);
   const agents = readStringArray(value, 'agents', issues);
   const technologies = readOptionalStringArray(value, 'technologies', issues);
   const defaultTaskType = readOptionalString(value, 'defaultTaskType', issues);
@@ -62,7 +74,7 @@ export function normalizeProjectConfig(value: unknown): ReadProjectConfigResult 
   return {
     config: {
       project: project as string,
-      registry: registry as string,
+      registry: registry as RegistryConfig,
       agents,
       technologies,
       defaultTaskType,
@@ -100,6 +112,107 @@ function readString(
       code: 'missing_project_config_string',
       message: `Project config field "${field}" must be a non-empty string.`,
       field,
+    });
+    return undefined;
+  }
+
+  return value;
+}
+
+function readRegistryConfig(
+  source: Record<string, unknown>,
+  issues: ValidationIssue[],
+): RegistryConfig | undefined {
+  const value = source.registry;
+
+  if (typeof value === 'string') {
+    if (value.trim() === '') {
+      issues.push({
+        severity: 'error',
+        code: 'missing_project_config_string',
+        message: 'Project config field "registry" must be a non-empty string.',
+        field: 'registry',
+      });
+      return undefined;
+    }
+
+    return value;
+  }
+
+  if (!isRecord(value)) {
+    issues.push({
+      severity: 'error',
+      code: 'invalid_registry_config',
+      message: 'Project config field "registry" must be a non-empty string or an object.',
+      field: 'registry',
+    });
+    return undefined;
+  }
+
+  validateYandexObjectStorageRegistryFields(value, issues);
+
+  if (value.type !== 'yandex-object-storage') {
+    issues.push({
+      severity: 'error',
+      code: 'unsupported_registry_provider',
+      message: 'Registry config field "type" must be "yandex-object-storage".',
+      field: 'registry.type',
+    });
+    return undefined;
+  }
+
+  const bucket = readRegistryConfigString(value, 'bucket', issues);
+  const prefix = readRegistryConfigString(value, 'prefix', issues);
+  const endpoint = readRegistryConfigString(value, 'endpoint', issues);
+
+  if (!bucket || !prefix || !endpoint) {
+    return undefined;
+  }
+
+  return {
+    type: 'yandex-object-storage',
+    bucket,
+    prefix,
+    endpoint,
+  } satisfies YandexObjectStorageRegistryConfig;
+}
+
+function validateYandexObjectStorageRegistryFields(
+  source: Record<string, unknown>,
+  issues: ValidationIssue[],
+): void {
+  for (const field of Object.keys(source)) {
+    if (yandexObjectStorageRegistryFields.has(field)) {
+      continue;
+    }
+
+    const isSecretField = /secret|token|credential|accesskey|serviceaccount|password|privatekey/i.test(field);
+    issues.push({
+      severity: 'error',
+      code: isSecretField
+        ? 'registry_config_secret_not_allowed'
+        : 'unknown_registry_config_field',
+      message: isSecretField
+        ? `Registry config field "${field}" must not contain credentials or secrets.`
+        : `Registry config field "${field}" is not supported.`,
+      field: `registry.${field}`,
+    });
+  }
+}
+
+function readRegistryConfigString(
+  source: Record<string, unknown>,
+  field: string,
+  issues: ValidationIssue[],
+): string | undefined {
+  const value = source[field];
+
+  if (typeof value !== 'string' || value.trim() === '') {
+    issues.push({
+      severity: 'error',
+      code: 'invalid_registry_config_field',
+      message: `Registry config field "${field}" must be a non-empty string.`,
+      field: `registry.${field}`,
     });
     return undefined;
   }

@@ -14,19 +14,26 @@ npm-пакет с remote registry.
 
 ### 1. Установить CLI
 
-Основной сценарий для разработчиков — глобальная установка npm-пакета:
+После публикации во внутреннем npm registry основной сценарий для
+разработчиков — глобальная установка npm-пакета:
 
 ``` Powershell
-npm install -g @ai-tools/ai-skills
+npm.cmd install -g @harness-system/pb-agent-sync
 ```
 
 Для доступа к внутреннему npm registry нужен `.npmrc`. Пример лежит в
-[.npmrc.example](./.npmrc.example): в нем указан scope `@ai-tools` и
+[.npmrc.example](./.npmrc.example): в нем указан scope `@harness-system` и
 заглушка вместо токена.
 
 Путь для расположения файла:
 ``` text
 C:\Users\<user>\.npmrc
+```
+
+Проверить установленную версию:
+
+``` Powershell
+ai-skills --version
 ```
 
 ### 2. Добавить `.ai-skills.json`
@@ -158,6 +165,25 @@ ai-skills status --project-root .
 ai-skills check --project-root .
 ```
 
+### `ai-skills registry review`
+
+Проверяет качество materials в registry, указанном в `.ai-skills.json`, без
+генерации файлов и без изменения самого registry.
+
+``` shell
+ai-skills registry review --project-root .
+```
+
+Команда находит ошибки структуры и качества: material в неправильной
+директории, reference в active context, конфликтующие правила в
+пересекающемся контексте и отсутствующие bundled resources. Она также
+показывает warnings для слишком широкого `appliesTo`, дублирующегося текста
+и rules, которые больше похожи на workflow.
+
+Exit code будет ненулевым при ошибках; warnings не блокируют review. Это
+детерминированный lint, который дополняет, но не заменяет агентный review
+содержания.
+
 ## Registry
 
 Registry содержит Markdown-файлы с YAML frontmatter.
@@ -251,6 +277,22 @@ composer tests passed
 codex adapter tests passed
 cli tests passed
 ```
+
+### Smoke-проверка глобального CLI
+
+После локальной сборки можно проверить пакет так же, как его будет
+устанавливать разработчик:
+
+``` Powershell
+npm.cmd install -g .
+ai-skills --version
+ai-skills check --project-root <путь-до-тестового-проекта>
+ai-skills sync --project-root <путь-до-тестового-проекта>
+ai-skills status --project-root <путь-до-тестового-проекта>
+```
+
+Команды `check`, `sync` и `status` должны завершиться без ошибок, а `sync`
+должна создать локальные generated-файлы в тестовом проекте.
 
 Локально проверить внешний проект:
 

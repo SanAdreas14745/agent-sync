@@ -210,6 +210,29 @@ Composer должен:
 registry, а не задачей сортировки. Такие конфликты должен выявлять
 review/lint-процесс registry.
 
+## Registry Review
+
+Команда `ai-skills registry review --project-root .` выполняет
+детерминированную проверку registry, указанного в `.ai-skills.json`. Она не
+генерирует agent files и не изменяет materials.
+
+Проверяются как минимум:
+
+- соответствие `kind` расположению material в `rules/`, `skills/` или
+  `references/`;
+- запрет ручных полей порядка `priority` и `order`;
+- `loadMode: reference` для references;
+- ограничения `appliesTo` для `project`, `directory` и `taskType` scopes;
+- базовые противоположные директивы в rules одинакового scope/category с
+  пересекающимся `appliesTo`;
+- дублирующийся текст material;
+- Markdown-ссылки skill на отсутствующие bundled resources.
+
+Ошибки завершают команду с ненулевым exit code. Warnings сообщают о
+вероятных проблемах качества, например rule, похожем на многошаговый
+workflow. Проверка дополняет ручной или агентный review, но не подменяет
+смысловую оценку материалов.
+
 ## Adapter Behavior
 
 Adapter должен преобразовывать registry materials в формат конкретного
