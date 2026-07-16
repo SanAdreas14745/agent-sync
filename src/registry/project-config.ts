@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import {
+  BundledRegistryConfig,
   ProjectConfig,
   RegistryConfig,
   ValidationIssue,
@@ -20,6 +21,8 @@ const yandexObjectStorageRegistryFields = new Set([
   'prefix',
   'endpoint',
 ]);
+
+const bundledRegistryFields = new Set(['type']);
 
 export interface ReadProjectConfigResult {
   config?: ProjectConfig;
@@ -149,17 +152,30 @@ function readRegistryConfig(
     return undefined;
   }
 
-  validateYandexObjectStorageRegistryFields(value, issues);
+  if (value.type === 'bundled') {
+    const issueCount = issues.length;
+    validateBundledRegistryFields(value, issues);
+
+    if (issues.length > issueCount) {
+      return undefined;
+    }
+
+    return {
+      type: 'bundled',
+    } satisfies BundledRegistryConfig;
+  }
 
   if (value.type !== 'yandex-object-storage') {
     issues.push({
       severity: 'error',
       code: 'unsupported_registry_provider',
-      message: 'Registry config field "type" must be "yandex-object-storage".',
+      message: 'Registry config field "type" must be "bundled" or "yandex-object-storage".',
       field: 'registry.type',
     });
     return undefined;
   }
+
+  validateYandexObjectStorageRegistryFields(value, issues);
 
   const bucket = readRegistryConfigString(value, 'bucket', issues);
   const prefix = readRegistryConfigString(value, 'prefix', issues);
@@ -181,8 +197,23 @@ function validateYandexObjectStorageRegistryFields(
   source: Record<string, unknown>,
   issues: ValidationIssue[],
 ): void {
+  validateRegistryConfigFields(source, yandexObjectStorageRegistryFields, issues);
+}
+
+function validateBundledRegistryFields(
+  source: Record<string, unknown>,
+  issues: ValidationIssue[],
+): void {
+  validateRegistryConfigFields(source, bundledRegistryFields, issues);
+}
+
+function validateRegistryConfigFields(
+  source: Record<string, unknown>,
+  allowedFields: Set<string>,
+  issues: ValidationIssue[],
+): void {
   for (const field of Object.keys(source)) {
-    if (yandexObjectStorageRegistryFields.has(field)) {
+    if (allowedFields.has(field)) {
       continue;
     }
 

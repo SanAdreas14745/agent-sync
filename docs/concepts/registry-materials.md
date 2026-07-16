@@ -151,7 +151,7 @@ version: 1
 owner: frontend
 updatedAt: 2026-07-09
 appliesTo:
-  agents: ["codex"]
+  agents: ["codex", "claude-code", "cursor", "github-copilot"]
   technologies: ["typescript"]
 ```
 
@@ -234,6 +234,9 @@ workflow. Проверка дополняет ручной или агентны
 смысловую оценку материалов.
 
 ## Adapter Behavior
+
+Текущие native file layouts для всех поддерживаемых агентов описаны в
+[Agent Adapters](agent-adapters.md).
 
 Adapter должен преобразовывать registry materials в формат конкретного
 агента без потери семантики.

@@ -315,8 +315,13 @@ function getGeneratedSkillEntrypoint(
     return undefined;
   }
 
-  return skillFiles.find((file) => file.relativePath.endsWith(`/skills/${skillDir}/SKILL.md`))
-    ?.relativePath;
+  const directSuffix = '/skills/' + skillDir + '/SKILL.md';
+  const namespacedSuffix = '/skills/agentsync-' + skillDir + '/SKILL.md';
+
+  return skillFiles.find((file) => (
+    file.relativePath.endsWith(directSuffix) ||
+    file.relativePath.endsWith(namespacedSuffix)
+  ))?.relativePath;
 }
 
 function getSkillOutputDirName(skill: AvailableSkill): string | undefined {

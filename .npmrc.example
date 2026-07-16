@@ -1,2 +1,2 @@
-@harness-system:registry=https://git.pbops.ru/api/v4/projects/<agent-sync-project-id>/packages/npm/
-//git.pbops.ru/api/v4/projects/<agent-sync-project-id>/packages/npm/:_authToken=<your-token>
+@harness-system:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
