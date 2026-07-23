@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import {
-  BundledRegistryConfig,
   GitRegistryConfig,
   ProjectConfig,
   RegistryConfig,
@@ -16,7 +15,6 @@ const projectConfigFields = new Set([
   'defaultTaskType',
 ]);
 
-const bundledRegistryFields = new Set(['type']);
 const gitRegistryFields = new Set(['type', 'url', 'ref']);
 
 export interface ReadProjectConfigResult {
@@ -147,19 +145,6 @@ function readRegistryConfig(
     return undefined;
   }
 
-  if (value.type === 'bundled') {
-    const issueCount = issues.length;
-    validateBundledRegistryFields(value, issues);
-
-    if (issues.length > issueCount) {
-      return undefined;
-    }
-
-    return {
-      type: 'bundled',
-    } satisfies BundledRegistryConfig;
-  }
-
   if (value.type === 'git') {
     const issueCount = issues.length;
     validateRegistryConfigFields(value, gitRegistryFields, issues);
@@ -200,17 +185,10 @@ function readRegistryConfig(
   issues.push({
     severity: 'error',
     code: 'unsupported_registry_provider',
-    message: 'Registry config field "type" must be "bundled" or "git".',
+    message: 'Registry config field "type" must be "git".',
     field: 'registry.type',
   });
   return undefined;
-}
-
-function validateBundledRegistryFields(
-  source: Record<string, unknown>,
-  issues: ValidationIssue[],
-): void {
-  validateRegistryConfigFields(source, bundledRegistryFields, issues);
 }
 
 function validateRegistryConfigFields(

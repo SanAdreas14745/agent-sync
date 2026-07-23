@@ -10,7 +10,6 @@ export * from './adapters/types';
 export * from './adapters/writer';
 export * from './composer/resolver';
 export * from './composer/types';
-export * from './registry/bundled-registry-provider';
 export * from './registry/frontmatter';
 export * from './registry/file-registry-provider';
 export * from './registry/git-registry';

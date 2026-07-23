@@ -12,7 +12,7 @@ const publishWorkflow = fs.readFileSync(
 assert.equal(packageJson.private, undefined);
 assert.equal(packageJson.publishConfig.registry, 'https://npm.pkg.github.com');
 assert.ok(packageJson.files.includes('dist'));
-assert.ok(packageJson.files.includes('registry'));
+assert.equal(packageJson.files.includes('registry'), false);
 assert.equal(packageJson.bin['ai-skills'], 'dist/cli.js');
 assert.equal(packageJson.scripts.prepack, 'npm run build');
 assert.equal(packageJson.scripts.prepublishOnly, 'npm run verify');

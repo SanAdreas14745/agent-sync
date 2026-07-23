@@ -356,7 +356,6 @@ async function checkCommand(options: CliOptions): Promise<number> {
     !registryHasErrors &&
     (
       workspace.registryProvider.type === 'file' ||
-      workspace.registryProvider.type === 'bundled' ||
       workspace.registryProvider.type === 'git'
     )
   ) {

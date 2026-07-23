@@ -2,7 +2,7 @@ import { RegistryProvider, RegistryProviderType } from './provider';
 import { ReadRegistryResult } from './types';
 
 export class UnavailableRegistryProvider implements RegistryProvider {
-  constructor(readonly type: Exclude<RegistryProviderType, 'file' | 'bundled'>) {}
+  constructor(readonly type: Exclude<RegistryProviderType, 'file'>) {}
 
   readRegistry(): ReadRegistryResult {
     return {
