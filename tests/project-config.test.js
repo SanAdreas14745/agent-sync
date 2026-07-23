@@ -13,27 +13,6 @@ const fileConfigResult = api.normalizeProjectConfig({
 assert.deepEqual(fileConfigResult.issues, []);
 assert.equal(fileConfigResult.config.registry, './registry');
 
-const bundledConfigResult = api.normalizeProjectConfig({
-  ...baseConfig,
-  registry: {
-    type: 'bundled',
-  },
-});
-assert.deepEqual(bundledConfigResult.issues, []);
-assert.deepEqual(bundledConfigResult.config.registry, { type: 'bundled' });
-
-const bundledConfigWithExtraField = api.normalizeProjectConfig({
-  ...baseConfig,
-  registry: {
-    type: 'bundled',
-    bucket: 'must-not-be-here',
-  },
-});
-assert.deepEqual(
-  bundledConfigWithExtraField.issues.map((issue) => issue.code),
-  ['unknown_registry_config_field'],
-);
-
 const gitConfigResult = api.normalizeProjectConfig({
   ...baseConfig,
   registry: {

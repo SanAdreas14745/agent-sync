@@ -2,7 +2,6 @@ import { ReadRegistryResult } from './types';
 
 export type RegistryProviderType =
   | 'file'
-  | 'bundled'
   | 'release-layout'
   | 'git';
 

@@ -104,43 +104,6 @@ const missingGitLockOutput = runFailingCli([
 ]);
 assert.match(missingGitLockOutput, /registry_lock_read_failed/);
 
-const bundledRegistryProjectRoot = path.resolve('./tests/.tmp/bundled-registry-project');
-fs.rmSync(bundledRegistryProjectRoot, { recursive: true, force: true });
-fs.mkdirSync(bundledRegistryProjectRoot, { recursive: true });
-fs.writeFileSync(
-  path.join(bundledRegistryProjectRoot, '.ai-skills.json'),
-  JSON.stringify(
-    {
-      project: 'statistics',
-      agents: ['codex'],
-      technologies: ['typescript'],
-      registry: {
-        type: 'bundled',
-      },
-    },
-    null,
-    2,
-  ),
-  'utf8',
-);
-
-const bundledRegistryCheckOutput = runCli([
-  'check',
-  '--project-root',
-  bundledRegistryProjectRoot,
-]);
-assert.match(bundledRegistryCheckOutput, /registry provider: bundled/);
-assert.match(bundledRegistryCheckOutput, /registry found/);
-assert.match(bundledRegistryCheckOutput, /active rules resolved/);
-
-const bundledRegistrySyncOutput = runCli([
-  'sync',
-  '--project-root',
-  bundledRegistryProjectRoot,
-]);
-assert.match(bundledRegistrySyncOutput, /Generated:/);
-assert.ok(fs.existsSync(path.join(bundledRegistryProjectRoot, 'AGENTS.md')));
-
 const dryRunOutput = runCli([
   'sync',
   '--project-root',

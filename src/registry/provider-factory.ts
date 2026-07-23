@@ -1,5 +1,4 @@
 import { resolve } from 'node:path';
-import { BundledRegistryProvider } from './bundled-registry-provider';
 import { FileRegistryProvider } from './file-registry-provider';
 import { GitRegistryProvider } from './git-registry-provider';
 import { RegistryProvider } from './provider';
@@ -13,10 +12,6 @@ export function createRegistryProvider(
 ): RegistryProvider {
   if (typeof registryConfig === 'string') {
     return new FileRegistryProvider(resolve(projectRoot, registryConfig));
-  }
-
-  if (registryConfig.type === 'bundled') {
-    return new BundledRegistryProvider();
   }
 
   if (gitCommit) {

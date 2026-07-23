@@ -112,10 +112,6 @@ export interface RegistryReleaseManifest {
   files: RegistryReleaseManifestFile[];
 }
 
-export interface BundledRegistryConfig {
-  type: 'bundled';
-}
-
 export interface GitRegistryConfig {
   type: 'git';
   url: string;
@@ -124,7 +120,6 @@ export interface GitRegistryConfig {
 
 export type RegistryConfig =
   | string
-  | BundledRegistryConfig
   | GitRegistryConfig;
 
 export interface ProjectConfig {
