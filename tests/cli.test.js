@@ -77,20 +77,19 @@ assert.match(invalidReviewOutput, /manual_ordering_field_not_allowed/);
 assert.match(invalidReviewOutput, /conflicting_rule_directive/);
 assert.match(invalidReviewOutput, /Registry review failed/);
 
-const objectRegistryProjectRoot = path.resolve('./tests/.tmp/object-registry-project');
-fs.rmSync(objectRegistryProjectRoot, { recursive: true, force: true });
-fs.mkdirSync(objectRegistryProjectRoot, { recursive: true });
+const gitRegistryProjectRoot = path.resolve('./tests/.tmp/git-registry-project');
+fs.rmSync(gitRegistryProjectRoot, { recursive: true, force: true });
+fs.mkdirSync(gitRegistryProjectRoot, { recursive: true });
 fs.writeFileSync(
-  path.join(objectRegistryProjectRoot, '.ai-skills.json'),
+  path.join(gitRegistryProjectRoot, '.ai-skills.json'),
   JSON.stringify(
     {
       project: 'statistics',
       agents: ['codex'],
       registry: {
-        type: 'yandex-object-storage',
-        bucket: 'ai-skills-registry',
-        prefix: 'registries/frontend/v1',
-        endpoint: 'https://storage.yandexcloud.net',
+        type: 'git',
+        url: 'https://github.com/company/agent-sync-registry',
+        ref: 'main',
       },
     },
     null,
@@ -98,14 +97,12 @@ fs.writeFileSync(
   ),
   'utf8',
 );
-
-const objectRegistryCheckOutput = runFailingCli([
-  'check',
+const missingGitLockOutput = runFailingCli([
+  'sync',
   '--project-root',
-  objectRegistryProjectRoot,
+  gitRegistryProjectRoot,
 ]);
-assert.match(objectRegistryCheckOutput, /registry provider: yandex-object-storage/);
-assert.match(objectRegistryCheckOutput, /registry_provider_not_available/);
+assert.match(missingGitLockOutput, /registry_lock_read_failed/);
 
 const bundledRegistryProjectRoot = path.resolve('./tests/.tmp/bundled-registry-project');
 fs.rmSync(bundledRegistryProjectRoot, { recursive: true, force: true });

@@ -34,47 +34,37 @@ assert.deepEqual(
   ['unknown_registry_config_field'],
 );
 
-const objectRegistry = {
-  type: 'yandex-object-storage',
-  bucket: 'ai-skills-registry',
-  prefix: 'registries/frontend/v1',
-  endpoint: 'https://storage.yandexcloud.net',
-};
-const objectConfigResult = api.normalizeProjectConfig({
-  ...baseConfig,
-  registry: objectRegistry,
-});
-assert.deepEqual(objectConfigResult.issues, []);
-assert.deepEqual(objectConfigResult.config.registry, objectRegistry);
-
-const missingFieldResult = api.normalizeProjectConfig({
+const gitConfigResult = api.normalizeProjectConfig({
   ...baseConfig,
   registry: {
-    ...objectRegistry,
-    endpoint: '',
+    type: 'git',
+    url: 'https://github.com/company/agent-sync-registry.git/',
+    ref: 'main',
+  },
+});
+assert.deepEqual(gitConfigResult.issues, []);
+assert.deepEqual(gitConfigResult.config.registry, {
+  type: 'git',
+  url: 'https://github.com/company/agent-sync-registry',
+  ref: 'main',
+});
+
+const invalidGitConfigResult = api.normalizeProjectConfig({
+  ...baseConfig,
+  registry: {
+    type: 'git',
+    url: 'ssh://github.com/company/agent-sync-registry',
+    ref: 'main..next',
   },
 });
 assert.deepEqual(
-  missingFieldResult.issues.map((issue) => issue.code),
-  ['invalid_registry_config_field'],
-);
-
-const secretFieldResult = api.normalizeProjectConfig({
-  ...baseConfig,
-  registry: {
-    ...objectRegistry,
-    secretAccessKey: 'must-not-be-here',
-  },
-});
-assert.deepEqual(
-  secretFieldResult.issues.map((issue) => issue.code),
-  ['registry_config_secret_not_allowed'],
+  invalidGitConfigResult.issues.map((issue) => issue.code),
+  ['invalid_registry_config_field', 'invalid_registry_config_field'],
 );
 
 const unsupportedProviderResult = api.normalizeProjectConfig({
   ...baseConfig,
   registry: {
-    ...objectRegistry,
     type: 's3',
   },
 });

@@ -10,7 +10,7 @@ const offlineRoot = path.join(testRoot, 'offline');
 const cacheRoot = path.join(testRoot, 'cache');
 const corruptedRoot = path.join(testRoot, 'corrupted');
 const releaseId = '2026-07-16T120000Z';
-const cacheKey = 'https://storage.yandexcloud.net/ai-skills-registry/registries/frontend/v1';
+const cacheKey = 'https://github.com/company/agent-sync-registry#main';
 
 prepareReleaseLayout(remoteRoot, releaseId);
 

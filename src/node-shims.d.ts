@@ -12,6 +12,7 @@ declare module 'node:fs' {
   export function existsSync(path: string): boolean;
   export function copyFileSync(source: string, destination: string): void;
   export function mkdirSync(path: string, options?: { recursive?: boolean }): void;
+  export function mkdtempSync(prefix: string): string;
   export function readFileSync(path: string): Buffer;
   export function readFileSync(path: string, encoding: string): string;
   export function readdirSync(path: string, options: { withFileTypes: true }): Dirent[];
@@ -21,6 +22,18 @@ declare module 'node:fs' {
     path: string,
     options?: { recursive?: boolean; force?: boolean },
   ): void;
+  export function renameSync(oldPath: string, newPath: string): void;
+}
+
+declare module 'node:child_process' {
+  export function execFileSync(
+    file: string,
+    args: string[],
+    options: {
+      encoding: string;
+      stdio: ['ignore', 'pipe', 'pipe'];
+    },
+  ): string;
 }
 
 declare module 'node:crypto' {
@@ -33,6 +46,7 @@ declare module 'node:crypto' {
 
 declare module 'node:os' {
   export function homedir(): string;
+  export function tmpdir(): string;
 }
 
 declare module 'node:path' {
@@ -50,6 +64,7 @@ declare const process: {
   cwd(): string;
   exit(code?: number): never;
   exitCode?: number;
+  pid: number;
 };
 
 declare const __dirname: string;
