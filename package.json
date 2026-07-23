@@ -1,6 +1,6 @@
 {
   "name": "@harness-system/pb-agent-sync",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI for synchronizing AI agent rules and skills.",
   "keywords": [
     "ai",
@@ -36,7 +36,7 @@
   "scripts": {
     "prebuild": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "build": "tsc",
-    "test": "npm run build && node tests/composer.test.js && node tests/codex-adapter.test.js && node tests/agent-adapters.test.js && node tests/project-config.test.js && node tests/registry-provider.test.js && node tests/release-registry-provider.test.js && node tests/registry-review.test.js && node tests/cli.test.js && node tests/package-distribution.test.js",
+    "test": "npm run build && node tests/composer.test.js && node tests/codex-adapter.test.js && node tests/agent-adapters.test.js && node tests/project-config.test.js && node tests/registry-lock.test.js && node tests/registry-provider.test.js && node tests/git-registry-provider.test.js && node tests/release-registry-provider.test.js && node tests/registry-review.test.js && node tests/cli.test.js && node tests/package-distribution.test.js",
     "prepack": "npm run build",
     "pack:check": "npm pack --dry-run",
     "verify": "npm run test && npm run pack:check",

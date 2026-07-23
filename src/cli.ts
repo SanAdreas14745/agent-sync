@@ -9,6 +9,15 @@ import {RegistryProvider} from './registry/provider';
 import {createRegistryProvider} from './registry/provider-factory';
 import {readProjectConfig} from './registry/project-config';
 import {reviewRegistryMaterials} from './registry/reviewer';
+import {GitRegistryCache} from './registry/git-registry-cache';
+import {GitRegistryProvider, resolveGitRegistryRef} from './registry/git-registry-provider';
+import {
+  GitRegistryLock,
+  readRegistryLock,
+  registryLockFileName,
+  validateGitRegistryLock,
+  writeRegistryLock,
+} from './registry/registry-lock';
 import {ProjectConfig, ValidationIssue} from './registry/types';
 
 interface CliOptions {
@@ -31,7 +40,13 @@ interface Workspace {
   config: ProjectConfig;
   registryPath?: string;
   registryProvider: RegistryProvider;
+  registryLock?: GitRegistryLock;
   agent: string;
+}
+
+interface CreateWorkspaceResult {
+  workspace?: Workspace;
+  issues: ValidationIssue[];
 }
 
 void main(process.argv.slice(2));
@@ -78,6 +93,8 @@ async function runCommand(parsed: ParsedArgs): Promise<number> {
   switch (parsed.command) {
     case 'sync':
       return syncCommand(parsed.options);
+    case 'update':
+      return updateCommand(parsed.options);
     case 'status':
       return statusCommand(parsed.options);
     case 'check':
@@ -179,6 +196,56 @@ async function syncCommand(options: CliOptions): Promise<number> {
   return 0;
 }
 
+async function updateCommand(options: CliOptions): Promise<number> {
+  const projectRoot = resolve(options.projectRoot || process.cwd());
+  const configPath = join(projectRoot, '.ai-skills.json');
+  const configResult = readProjectConfig(configPath);
+
+  if (printIssues(configResult.issues) || !configResult.config) {
+    return 1;
+  }
+
+  if (typeof configResult.config.registry === 'string' || configResult.config.registry.type !== 'git') {
+    console.error('ERROR ai-skills update requires registry.type "git".');
+    return 1;
+  }
+
+  const registryConfig = configResult.config.registry;
+  let resolvedCommit: string;
+  try {
+    resolvedCommit = resolveGitRegistryRef(registryConfig.url, registryConfig.ref);
+  } catch (error) {
+    console.error(`ERROR git_registry_ref_resolution_failed: ${error instanceof Error ? error.message : String(error)}`);
+    return 1;
+  }
+
+  const registry = new GitRegistryProvider({
+    url: registryConfig.url,
+    commit: resolvedCommit,
+  }).readRegistry();
+  const reviewResult = reviewRegistryMaterials(registry.materials);
+  const issues = [...registry.issues, ...reviewResult.issues];
+
+  if (printIssues(issues)) {
+    return 1;
+  }
+
+  const lockPath = join(projectRoot, registryLockFileName);
+  try {
+    writeRegistryLock(lockPath, {
+      source: registryConfig.url,
+      requestedRef: registryConfig.ref,
+      resolvedCommit,
+    });
+  } catch (error) {
+    console.error(`ERROR registry_lock_write_failed: ${error instanceof Error ? error.message : String(error)}`);
+    return 1;
+  }
+
+  console.log(`Updated registry lock: ${resolvedCommit}`);
+  return syncCommand(options);
+}
+
 function statusCommand(options: CliOptions): number {
   const workspace = loadWorkspace(options);
 
@@ -197,6 +264,17 @@ function statusCommand(options: CliOptions): number {
 
   console.log(`Project: ${workspace.config.project}`);
   console.log(`Agent: ${workspace.agent}`);
+  if (workspace.registryLock && typeof workspace.config.registry !== 'string') {
+    const cache = new GitRegistryCache();
+    const cacheState = cache.load(
+      workspace.registryLock.source,
+      workspace.registryLock.resolvedCommit,
+    ) ? 'available' : 'missing';
+    console.log(`Registry source: ${workspace.registryLock.source}`);
+    console.log(`Registry ref: ${workspace.registryLock.requestedRef}`);
+    console.log(`Registry commit: ${workspace.registryLock.resolvedCommit}`);
+    console.log(`Registry cache: ${cacheState}`);
+  }
   console.log('');
   console.log('Generated files:');
   for (const path of adapter.statusPaths) {
@@ -255,7 +333,11 @@ async function checkCommand(options: CliOptions): Promise<number> {
     return 1;
   }
 
-  const workspace = createWorkspace(projectRoot, configResult.config, options);
+  const workspaceResult = createWorkspace(projectRoot, configResult.config, options);
+  if (printIssues(workspaceResult.issues) || !workspaceResult.workspace) {
+    return 1;
+  }
+  const workspace = workspaceResult.workspace;
 
   console.log(`OK    registry provider: ${workspace.registryProvider.type}`);
   const registry = await workspace.registryProvider.readRegistry();
@@ -272,7 +354,11 @@ async function checkCommand(options: CliOptions): Promise<number> {
 
   if (
     !registryHasErrors &&
-    (workspace.registryProvider.type === 'file' || workspace.registryProvider.type === 'bundled')
+    (
+      workspace.registryProvider.type === 'file' ||
+      workspace.registryProvider.type === 'bundled' ||
+      workspace.registryProvider.type === 'git'
+    )
   ) {
     console.log('OK    registry found');
   }
@@ -367,24 +453,56 @@ function loadWorkspace(options: CliOptions): Workspace | undefined {
     return undefined;
   }
 
-  return createWorkspace(projectRoot, configResult.config, options);
+  const workspaceResult = createWorkspace(projectRoot, configResult.config, options);
+
+  if (printIssues(workspaceResult.issues) || !workspaceResult.workspace) {
+    return undefined;
+  }
+
+  return workspaceResult.workspace;
 }
 
 function createWorkspace(
   projectRoot: string,
   config: ProjectConfig,
   options: CliOptions,
-): Workspace {
+): CreateWorkspaceResult {
   const registryPath = typeof config.registry === 'string'
     ? resolve(projectRoot, config.registry)
     : undefined;
 
+  let registryLock: GitRegistryLock | undefined;
+  const issues: ValidationIssue[] = [];
+
+  if (typeof config.registry !== 'string' && config.registry.type === 'git') {
+    const lockPath = join(projectRoot, registryLockFileName);
+    const lockResult = readRegistryLock(lockPath);
+    issues.push(...lockResult.issues);
+
+    if (lockResult.lock) {
+      issues.push(...validateGitRegistryLock(lockResult.lock, config.registry));
+      registryLock = lockResult.lock;
+    }
+  }
+
+  if (issues.some((issue) => issue.severity === 'error')) {
+    return { issues };
+  }
+
   return {
-    projectRoot,
-    config,
-    registryPath,
-    registryProvider: createRegistryProvider(projectRoot, config.registry),
-    agent: normalizeAgentId(options.agent || config.agents[0]),
+    workspace: {
+      projectRoot,
+      config,
+      registryPath,
+      registryProvider: createRegistryProvider(
+        projectRoot,
+        config.registry,
+        registryLock?.resolvedCommit,
+      ),
+      registryLock,
+      agent: normalizeAgentId(options.agent || config.agents[0]),
+    },
+    issues,
   };
 }
 
@@ -534,6 +652,7 @@ function printHelp(): void {
 
 Commands:
   sync                 Generate local agent files
+  update               Update pinned Git registry and generate local agent files
   status               Show generated state
   check                Validate project config and registry
   info <material-id>   Show material status in current project context

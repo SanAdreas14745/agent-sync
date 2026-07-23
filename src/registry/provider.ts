@@ -4,7 +4,7 @@ export type RegistryProviderType =
   | 'file'
   | 'bundled'
   | 'release-layout'
-  | 'yandex-object-storage';
+  | 'git';
 
 export type RegistryProviderReadResult =
   | ReadRegistryResult

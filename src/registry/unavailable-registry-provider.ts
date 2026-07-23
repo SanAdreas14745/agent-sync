@@ -12,7 +12,7 @@ export class UnavailableRegistryProvider implements RegistryProvider {
         {
           severity: 'error',
           code: 'registry_provider_not_available',
-          message: `Registry provider "${this.type}" is not available yet. Use a file registry or upgrade to a version with cloud registry support.`,
+          message: `Registry provider "${this.type}" is not available yet. Use a file registry or upgrade to a version with remote registry support.`,
         },
       ],
     };

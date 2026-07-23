@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import {
   BundledRegistryConfig,
+  GitRegistryConfig,
   ProjectConfig,
   RegistryConfig,
   ValidationIssue,
-  YandexObjectStorageRegistryConfig,
 } from './types';
+import { isValidGitRegistryRef, normalizeGitRegistryUrl } from './git-registry';
 
 const projectConfigFields = new Set([
   'project',
@@ -15,14 +16,8 @@ const projectConfigFields = new Set([
   'defaultTaskType',
 ]);
 
-const yandexObjectStorageRegistryFields = new Set([
-  'type',
-  'bucket',
-  'prefix',
-  'endpoint',
-]);
-
 const bundledRegistryFields = new Set(['type']);
+const gitRegistryFields = new Set(['type', 'url', 'ref']);
 
 export interface ReadProjectConfigResult {
   config?: ProjectConfig;
@@ -165,39 +160,50 @@ function readRegistryConfig(
     } satisfies BundledRegistryConfig;
   }
 
-  if (value.type !== 'yandex-object-storage') {
-    issues.push({
-      severity: 'error',
-      code: 'unsupported_registry_provider',
-      message: 'Registry config field "type" must be "bundled" or "yandex-object-storage".',
-      field: 'registry.type',
-    });
-    return undefined;
+  if (value.type === 'git') {
+    const issueCount = issues.length;
+    validateRegistryConfigFields(value, gitRegistryFields, issues);
+
+    const url = typeof value.url === 'string' ? normalizeGitRegistryUrl(value.url) : undefined;
+    if (!url) {
+      issues.push({
+        severity: 'error',
+        code: 'invalid_registry_config_field',
+        message: 'Registry config field "url" must be an HTTPS Git repository URL.',
+        field: 'registry.url',
+      });
+    }
+
+    const ref = typeof value.ref === 'string' && isValidGitRegistryRef(value.ref)
+      ? value.ref
+      : undefined;
+    if (!ref) {
+      issues.push({
+        severity: 'error',
+        code: 'invalid_registry_config_field',
+        message: 'Registry config field "ref" must be a valid Git ref.',
+        field: 'registry.ref',
+      });
+    }
+
+    if (issues.length > issueCount || !url || !ref) {
+      return undefined;
+    }
+
+    return {
+      type: 'git',
+      url,
+      ref,
+    } satisfies GitRegistryConfig;
   }
 
-  validateYandexObjectStorageRegistryFields(value, issues);
-
-  const bucket = readRegistryConfigString(value, 'bucket', issues);
-  const prefix = readRegistryConfigString(value, 'prefix', issues);
-  const endpoint = readRegistryConfigString(value, 'endpoint', issues);
-
-  if (!bucket || !prefix || !endpoint) {
-    return undefined;
-  }
-
-  return {
-    type: 'yandex-object-storage',
-    bucket,
-    prefix,
-    endpoint,
-  } satisfies YandexObjectStorageRegistryConfig;
-}
-
-function validateYandexObjectStorageRegistryFields(
-  source: Record<string, unknown>,
-  issues: ValidationIssue[],
-): void {
-  validateRegistryConfigFields(source, yandexObjectStorageRegistryFields, issues);
+  issues.push({
+    severity: 'error',
+    code: 'unsupported_registry_provider',
+    message: 'Registry config field "type" must be "bundled" or "git".',
+    field: 'registry.type',
+  });
+  return undefined;
 }
 
 function validateBundledRegistryFields(
@@ -229,26 +235,6 @@ function validateRegistryConfigFields(
       field: `registry.${field}`,
     });
   }
-}
-
-function readRegistryConfigString(
-  source: Record<string, unknown>,
-  field: string,
-  issues: ValidationIssue[],
-): string | undefined {
-  const value = source[field];
-
-  if (typeof value !== 'string' || value.trim() === '') {
-    issues.push({
-      severity: 'error',
-      code: 'invalid_registry_config_field',
-      message: `Registry config field "${field}" must be a non-empty string.`,
-      field: `registry.${field}`,
-    });
-    return undefined;
-  }
-
-  return value;
 }
 
 function readOptionalString(

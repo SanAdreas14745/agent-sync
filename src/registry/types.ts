@@ -112,21 +112,20 @@ export interface RegistryReleaseManifest {
   files: RegistryReleaseManifestFile[];
 }
 
-export interface YandexObjectStorageRegistryConfig {
-  type: 'yandex-object-storage';
-  bucket: string;
-  prefix: string;
-  endpoint: string;
-}
-
 export interface BundledRegistryConfig {
   type: 'bundled';
+}
+
+export interface GitRegistryConfig {
+  type: 'git';
+  url: string;
+  ref: string;
 }
 
 export type RegistryConfig =
   | string
   | BundledRegistryConfig
-  | YandexObjectStorageRegistryConfig;
+  | GitRegistryConfig;
 
 export interface ProjectConfig {
   project: string;
