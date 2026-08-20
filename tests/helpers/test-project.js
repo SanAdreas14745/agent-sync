@@ -13,7 +13,7 @@ function setupTestProject() {
         project: 'statistics',
         agents: ['codex'],
         technologies: ['typescript'],
-        registry: path.resolve('./registry').replace(/\\/g, '/'),
+        registry: path.resolve('./tests/fixtures/registry').replace(/\\/g, '/'),
       },
       null,
       2,

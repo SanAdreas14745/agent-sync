@@ -8,7 +8,10 @@ const testRoot = path.resolve(`./tests/.tmp/git-registry-provider-${process.pid}
 const remoteRoot = path.join(testRoot, 'remote');
 const cacheRoot = path.join(testRoot, 'cache');
 fs.mkdirSync(path.join(remoteRoot, 'registry'), { recursive: true });
-copyDirectory(path.resolve('./registry'), path.join(remoteRoot, 'registry'));
+copyDirectory(
+  path.resolve('./tests/fixtures/registry'),
+  path.join(remoteRoot, 'registry'),
+);
 
 git(['init', remoteRoot]);
 git(['-C', remoteRoot, 'config', 'user.email', 'tests@example.com']);

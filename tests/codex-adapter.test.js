@@ -5,7 +5,7 @@ const api = require('../dist');
 const { setupTestProject } = require('./helpers/test-project');
 
 const projectRoot = setupTestProject();
-const registry = api.readRegistry('./registry');
+const registry = api.readRegistry('./tests/fixtures/registry');
 const configResult = api.readProjectConfig(path.join(projectRoot, '.ai-skills.json'));
 
 assert.deepEqual(registry.issues, []);
@@ -21,7 +21,7 @@ assert.deepEqual(
     project: 'statistics',
     repository: 'statistics-ui',
     agents: ['codex'],
-    registry: './registry',
+    registry: './tests/fixtures/registry',
     output: {
       codex: {
         entry: 'AGENTS.md',

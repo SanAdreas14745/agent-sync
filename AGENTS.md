@@ -25,8 +25,8 @@ task.
 ## Registry Boundary
 
 - Canonical shareable registry lives in the separate `harness-system/agent-sync-registry` repository.
-- `registry/` is a local test fixture and is not included in the npm package.
+- `tests/fixtures/registry/` is a minimal local test fixture and is not included in the npm package.
 - `agentsync-rules/` and `agentsync-skills/` are local instructions for working
   in this AgentSync repository.
-- Do not move local-only rules into `registry/` unless they should be shared
-  with generated agent contexts.
+- Do not add canonical registry materials to `tests/fixtures/registry/`; add only the
+  smallest representative material needed by a test.

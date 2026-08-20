@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const api = require('../dist');
 
-const registry = api.readRegistry('./registry');
+const registry = api.readRegistry('./tests/fixtures/registry');
 
 assert.deepEqual(registry.issues, []);
 

@@ -22,7 +22,9 @@ for (const expectedCode of [
   assert.ok(invalidCodes.has(expectedCode), `Expected issue ${expectedCode}.`);
 }
 
-const baselineRegistry = new api.FileRegistryProvider('./registry').readRegistry();
+const baselineRegistry = new api.FileRegistryProvider(
+  './tests/fixtures/registry',
+).readRegistry();
 assert.equal(
   baselineRegistry.issues.filter((issue) => issue.severity === 'error').length,
   0,
