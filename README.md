@@ -17,18 +17,19 @@ Git-репозитории, а его версия фиксируется в п�
 - Node.js 20 или новее;
 - доступ на чтение пакетов namespace `@harness-system` в GitHub Packages;
 - classic personal access token GitHub с разрешением `read:packages` для
-  установки внутреннего пакета.
+  установки внутреннего пакета. Публичный registry читается без токена.
 
 ## Быстрый старт
 
 Для установки потребуется GitHub personal access token с доступом к GitHub
-Packages и приватному репозиторию `harness-system/agent-sync-registry`.
+Packages. Репозиторий `harness-system/agent-sync-registry` публичный и доступен
+без токена.
 
 ### 1. Создать личный токен GitHub
 
 1. Откройте [страницу создания токена](https://github.com/settings/tokens/new?scopes=read%3Apackages&description=AgentSync%20package%20install).
 2. Нажмите **Generate new token**.
-3. Выдайте токену доступ к чтению GitHub Packages и registry-репозитория.
+3. Выдайте токену доступ к чтению GitHub Packages.
 4. Скопируйте значение токена: GitHub покажет его только один раз.
 
 ### 2. Настроить npm на компьютере
@@ -96,10 +97,8 @@ ai-skills --version
 ai-skills update --project-root .
 ```
 
-При первом обращении Git может запросить доступ к
-`harness-system/agent-sync-registry`; используйте тот же GitHub token через
-стандартный Git credential manager. `update` создаст `.ai-skills.lock.json` с
-полным commit SHA и сгенерирует инструкции.
+`update` создаст `.ai-skills.lock.json` с полным commit SHA и сгенерирует
+инструкции.
 
 Ожидаемый результат: в корне проекта появятся `AGENTS.md` и каталог `.agents/`
 с rules и skills, соответствующими выбранному агенту, проекту и стеку.

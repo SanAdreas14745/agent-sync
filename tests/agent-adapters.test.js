@@ -11,7 +11,7 @@ const copilotEntryPath = path.join(projectRoot, '.github/copilot-instructions.md
 fs.writeFileSync(claudeEntryPath, 'user-managed Claude instructions', 'utf8');
 fs.mkdirSync(path.dirname(copilotEntryPath), { recursive: true });
 fs.writeFileSync(copilotEntryPath, 'user-managed Copilot instructions', 'utf8');
-const registry = api.readRegistry('./registry');
+const registry = api.readRegistry('./tests/fixtures/registry');
 
 assert.deepEqual(registry.issues, []);
 assert.deepEqual(api.supportedAgentIds, [

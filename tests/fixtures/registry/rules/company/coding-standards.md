@@ -8,9 +8,9 @@ loadMode: project
 status: active
 category: general
 severity: recommended
-version: 1
+version: 2
 owner: frontend
-updatedAt: 2026-07-09
+updatedAt: 2026-08-17
 appliesTo:
   agents: ["codex", "claude-code", "cursor", "github-copilot"]
 ---
@@ -26,3 +26,5 @@ appliesTo:
 - `// TODO:` comments разрешены и не считаются нарушением.
 - Пиши methods и functions вокруг одной основной ответственности. Если независимый логический блок можно назвать понятным domain name и extraction улучшает readability или testability, вынеси его в отдельный method/function.
 - Размер сам по себе не является нарушением: methods/functions на 20+ строк — только сигнал проверить наличие независимых логических блоков.
+- Если условие можно обработать ранним `return`, предпочитай его вложенному `if`. Не допускай двойную вложенность `if`, когда проверку можно выразить guard clause без ухудшения читаемости.
+- Допускается оставлять вложенность, если она явно отражает иерархию бизнес-правил или ранний выход делает последовательность выполнения менее понятной.

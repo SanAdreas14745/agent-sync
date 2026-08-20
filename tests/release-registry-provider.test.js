@@ -14,7 +14,7 @@ const cacheKey = 'https://github.com/company/agent-sync-registry#main';
 
 prepareReleaseLayout(remoteRoot, releaseId);
 
-const baseline = api.readRegistry('./registry');
+const baseline = api.readRegistry('./tests/fixtures/registry');
 assert.deepEqual(baseline.issues, []);
 
 const cache = new api.RegistryReleaseCache(cacheRoot);
@@ -80,7 +80,7 @@ console.log('release registry provider tests passed');
 
 function prepareReleaseLayout(root, id) {
   const materialRoot = path.join(root, 'releases', id, 'materials');
-  copyDirectory(path.resolve('./registry'), materialRoot);
+  copyDirectory(path.resolve('./tests/fixtures/registry'), materialRoot);
 
   const parsedRegistry = api.readRegistry(materialRoot);
   assert.deepEqual(parsedRegistry.issues, []);

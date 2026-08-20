@@ -1,8 +1,9 @@
 const assert = require('node:assert/strict');
 const api = require('../dist/index.js');
 
-const legacyResult = api.readRegistry('./registry');
-const providerResult = new api.FileRegistryProvider('./registry').readRegistry();
+const fixturePath = './tests/fixtures/registry';
+const legacyResult = api.readRegistry(fixturePath);
+const providerResult = new api.FileRegistryProvider(fixturePath).readRegistry();
 
 assert.deepEqual(providerResult, legacyResult);
 assert.ok(providerResult.skills.length > 0);
