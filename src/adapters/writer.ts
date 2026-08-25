@@ -11,20 +11,10 @@ export function writeGeneratedFiles(
   for (const file of files) {
     const absolutePath = resolveOutputPath(projectRoot, file.relativePath);
     mkdirSync(dirname(absolutePath), { recursive: true });
-    writeFileSync(absolutePath, encodeGeneratedContent(file), 'utf8');
+    writeFileSync(absolutePath, file.content, 'utf8');
   }
 
   return files;
-}
-
-function encodeGeneratedContent(file: GeneratedFile): string {
-  if (!file.relativePath.toLowerCase().endsWith('.md')) {
-    return file.content;
-  }
-
-  return file.content.startsWith('\uFEFF')
-    ? file.content
-    : `\uFEFF${file.content}`;
 }
 
 function resolveOutputPath(projectRoot: string, relativePath: string): string {
