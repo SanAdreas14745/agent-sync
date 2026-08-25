@@ -54,14 +54,14 @@ Packages. Репозиторий `harness-system/agent-sync-registry` публи
 Windows (PowerShell):
 
 ```powershell
-npm.cmd install --global @harness-system/pb-agent-sync@2.0.1
+npm.cmd install --global @harness-system/pb-agent-sync@2.0.2
 ai-skills --version
 ```
 
 macOS:
 
 ```shell
-npm install --global @harness-system/pb-agent-sync@2.0.1
+npm install --global @harness-system/pb-agent-sync@2.0.2
 ai-skills --version
 ```
 
