@@ -91,6 +91,12 @@ for (const testCase of cases) {
   adapter.writeFiles(projectRoot, resolveResult);
   assert.ok(fs.existsSync(path.join(projectRoot, testCase.requiredRule)));
   assert.ok(fs.existsSync(path.join(projectRoot, testCase.skill)));
+  const writtenSkill = fs.readFileSync(path.join(projectRoot, testCase.skill), 'utf8');
+  assert.equal(writtenSkill.charCodeAt(0), '-'.charCodeAt(0));
+  assert.match(
+    writtenSkill,
+    /^---\nname: agentsync-frontend-code-review\ndescription:/,
+  );
 
   const emptyResolveResult = {
     ...resolveResult,
