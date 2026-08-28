@@ -12,6 +12,7 @@ declare module 'node:fs' {
   export function existsSync(path: string): boolean;
   export function copyFileSync(source: string, destination: string): void;
   export function mkdirSync(path: string, options?: { recursive?: boolean }): void;
+  export function chmodSync(path: string, mode: number): void;
   export function mkdtempSync(prefix: string): string;
   export function readFileSync(path: string): Buffer;
   export function readFileSync(path: string, encoding: string): string;

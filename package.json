@@ -1,6 +1,6 @@
 {
   "name": "@harness-system/pb-agent-sync",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "CLI for synchronizing AI agent rules and skills.",
   "keywords": [
     "ai",
