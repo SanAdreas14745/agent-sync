@@ -77,6 +77,122 @@ assert.match(invalidReviewOutput, /manual_ordering_field_not_allowed/);
 assert.match(invalidReviewOutput, /conflicting_rule_directive/);
 assert.match(invalidReviewOutput, /Registry review failed/);
 
+const hooksProjectRoot = path.resolve('./tests/.tmp/hooks-project');
+fs.rmSync(hooksProjectRoot, { recursive: true, force: true });
+fs.mkdirSync(hooksProjectRoot, { recursive: true });
+fs.writeFileSync(
+  path.join(hooksProjectRoot, '.ai-skills.json'),
+  JSON.stringify(
+    {
+      project: 'statistics',
+      agents: ['codex'],
+      registry: path.resolve('./tests/fixtures/registry').replace(/\\/g, '/'),
+    },
+    null,
+    2,
+  ),
+  'utf8',
+);
+execFileSync('git', ['init'], { cwd: hooksProjectRoot, encoding: 'utf8' });
+
+const postCheckoutHookPath = path.join(hooksProjectRoot, '.git', 'hooks', 'post-checkout');
+if (fs.existsSync(postCheckoutHookPath)) {
+  fs.unlinkSync(postCheckoutHookPath);
+}
+assert.equal(fs.existsSync(postCheckoutHookPath), false);
+
+const hooksInstallOutput = runCli([
+  'hooks',
+  'install',
+  '--project-root',
+  hooksProjectRoot,
+]);
+assert.match(hooksInstallOutput, /Installed AgentSync post-checkout hook/);
+
+const postCheckoutHook = fs.readFileSync(postCheckoutHookPath, 'utf8');
+assert.match(postCheckoutHook, /\[ "\$3" != "1" \]/);
+assert.match(postCheckoutHook, /ai-skills update --project-root/);
+
+const repeatedHooksInstallOutput = runCli([
+  'hooks',
+  'install',
+  '--project-root',
+  hooksProjectRoot,
+]);
+assert.match(repeatedHooksInstallOutput, /already installed/);
+
+fs.writeFileSync(postCheckoutHookPath, '#!/bin/sh\necho custom hook\n', 'utf8');
+const hookConflictOutput = runFailingCli([
+  'hooks',
+  'install',
+  '--project-root',
+  hooksProjectRoot,
+]);
+assert.match(hookConflictOutput, /git_hook_conflict/);
+assert.equal(fs.readFileSync(postCheckoutHookPath, 'utf8'), '#!/bin/sh\necho custom hook\n');
+
+const customHooksProjectRoot = path.resolve('./tests/.tmp/custom-hooks-project');
+fs.rmSync(customHooksProjectRoot, { recursive: true, force: true });
+fs.mkdirSync(customHooksProjectRoot, { recursive: true });
+fs.writeFileSync(
+  path.join(customHooksProjectRoot, '.ai-skills.json'),
+  JSON.stringify(
+    {
+      project: 'statistics',
+      agents: ['codex'],
+      registry: path.resolve('./tests/fixtures/registry').replace(/\\/g, '/'),
+    },
+    null,
+    2,
+  ),
+  'utf8',
+);
+execFileSync('git', ['init'], { cwd: customHooksProjectRoot, encoding: 'utf8' });
+execFileSync('git', ['config', 'core.hooksPath', '.custom-hooks'], {
+  cwd: customHooksProjectRoot,
+  encoding: 'utf8',
+});
+
+runCli([
+  'hooks',
+  'install',
+  '--project-root',
+  customHooksProjectRoot,
+]);
+assert.ok(fs.existsSync(path.join(customHooksProjectRoot, '.custom-hooks', 'post-checkout')));
+
+const huskyHooksProjectRoot = path.resolve('./tests/.tmp/husky-hooks-project');
+fs.rmSync(huskyHooksProjectRoot, { recursive: true, force: true });
+fs.mkdirSync(path.join(huskyHooksProjectRoot, '.husky', '_'), { recursive: true });
+fs.writeFileSync(
+  path.join(huskyHooksProjectRoot, '.ai-skills.json'),
+  JSON.stringify(
+    {
+      project: 'statistics',
+      agents: ['codex'],
+      registry: path.resolve('./tests/fixtures/registry').replace(/\\/g, '/'),
+    },
+    null,
+    2,
+  ),
+  'utf8',
+);
+fs.writeFileSync(path.join(huskyHooksProjectRoot, '.husky', '_', 'h'), '#!/bin/sh\n', 'utf8');
+execFileSync('git', ['init'], { cwd: huskyHooksProjectRoot, encoding: 'utf8' });
+execFileSync('git', ['config', 'core.hooksPath', '.husky/_'], {
+  cwd: huskyHooksProjectRoot,
+  encoding: 'utf8',
+});
+
+runCli([
+  'hooks',
+  'install',
+  '--project-root',
+  huskyHooksProjectRoot,
+]);
+assert.ok(fs.existsSync(path.join(huskyHooksProjectRoot, '.husky', 'post-checkout')));
+assert.equal(fs.existsSync(path.join(huskyHooksProjectRoot, '.husky', '_', 'post-checkout')), false);
+
 const gitRegistryProjectRoot = path.resolve('./tests/.tmp/git-registry-project');
 fs.rmSync(gitRegistryProjectRoot, { recursive: true, force: true });
 fs.mkdirSync(gitRegistryProjectRoot, { recursive: true });

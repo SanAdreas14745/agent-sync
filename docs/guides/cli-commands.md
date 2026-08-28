@@ -28,6 +28,33 @@ ai-skills sync --project-root . --dry-run
 ai-skills update --project-root .
 ```
 
+## `ai-skills hooks install`
+
+Устанавливает Git hook `post-checkout` для проекта. После переключения на
+ветку hook запускает `ai-skills update` из корня текущего worktree. Поэтому
+актуальные rules и skills будут сгенерированы после перехода на `main`,
+переключения между задачами или создания и немедленного checkout новой ветки.
+
+```shell
+ai-skills hooks install --project-root .
+```
+
+Команду нужно выполнить один раз для каждого независимого клона. Для linked
+Git worktree достаточно установки из любого worktree того же репозитория.
+
+Hook не реагирует на `git fetch`, создание ветки без checkout и checkout
+отдельных файлов. При ошибке обновления он выводит предупреждение, но не
+прерывает Git-операцию.
+
+Для Husky команда распознает служебный каталог `.husky/_` и создаёт
+пользовательский hook `.husky/post-checkout`, не изменяя generated-файлы
+Husky.
+
+Если `post-checkout` уже используется другим инструментом, команда не
+перезаписывает его и завершится с ошибкой. В таком случае добавьте вызов
+`ai-skills update --project-root "$(git rev-parse --show-toplevel)"` в
+существующий hook вручную.
+
 ## `ai-skills info <material-id>`
 
 Показывает статус конкретного материала и причины, по которым он включён,
